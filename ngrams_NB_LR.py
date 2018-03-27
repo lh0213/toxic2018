@@ -15,6 +15,9 @@ from sklearn.metrics import classification_report
 from sklearn.metrics.classification import confusion_matrix
 import matplotlib.pyplot as plt
 from sklearn.metrics.ranking import roc_curve, auc
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.validation import check_X_y, check_is_fitted
+from scipy import sparse
 
 class_names = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
@@ -42,15 +45,41 @@ char_vectorizer = TfidfVectorizer(
     ngram_range=(2, 6),
     max_features=50000)
 
+class NbSvmClassifier(BaseEstimator, ClassifierMixin):
+    def __init__(self, C=1.0, dual=False, n_jobs=1):
+        self.C = C
+        self.dual = dual
+        self.n_jobs = n_jobs
+
+    def predict(self, x):
+        # Verify that model has been fit
+        check_is_fitted(self, ['_r', '_clf'])
+        return self._clf.predict(x.multiply(self._r))
+
+    def predict_proba(self, x):
+        # Verify that model has been fit
+        check_is_fitted(self, ['_r', '_clf'])
+        return self._clf.predict_proba(x.multiply(self._r))
+
+    def fit(self, x, y):
+        # Check that X and y have correct shape
+        y = y.values
+        x, y = check_X_y(x, y, accept_sparse=True)
+
+        def pr(x, y_i, y):
+            p = x[y==y_i].sum(0)
+            return (p+1) / ((y==y_i).sum()+1)
+
+        self._r = sparse.csr_matrix(np.log(pr(x,1,y) / pr(x,0,y)))
+        x_nb = x.multiply(self._r)
+        self._clf = LogisticRegression(C=self.C, dual=self.dual, n_jobs=self.n_jobs).fit(x_nb, y)
+        return self
+
+
 
 for class_name in class_names:
     print(class_name)
     classification = all_Comments_Data[class_name]
-    
-    #initialize a logistic regression classifier
-    #this part can either be changed into another model OR we can tune the model's parameters
-    #see the link to check what parameters can be tuned
-    logistic_Classifier = LogisticRegression(C=0.1, solver='sag') #http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
     
     #we use 1% as testing comments, and 99% as training comments
     X_train, X_test, y_train, y_test = train_test_split(all_Comments, classification, test_size = 0.1, random_state = 100)
@@ -60,27 +89,11 @@ for class_name in class_names:
     #transform the testing comments USING only the training comments' fittings
     X_test  = word_vectorizer.transform(X_test)
 
-    #Pass the attributes and classification into a logistic regression model
-    logistic_Classifier.fit(X_train, y_train)
-    
-    
-    #predict the outcome
-    y_pred = logistic_Classifier.predict(X_test)
-
+    model = NbSvmClassifier(C=4, dual=True, n_jobs=-1).fit(X_train, y_train)
+    y_pred = model.predict(X_test)
     #confusion matrix outcome
     #can someone check what does the matrix mean? I forgot which entry corresponds to TP, TN, FN, FP
     print(confusion_matrix(y_test, y_pred))
     
-    '''
-    roc_auc = auc(false_positive_rate, true_positive_rate)
-    plt.figure(figsize=(10,10))
-    plt.title('Receiver Operating Characteristic')
-    plt.plot(false_positive_rate,true_positive_rate, color='red',label = 'AUC = %0.2f' % roc_auc)
-    plt.legend(loc = 'lower right')
-    plt.plot([0, 1], [0, 1],linestyle='--')
-    plt.axis('tight')
-    plt.ylabel('True Positive Rate')
-    plt.xlabel('False Positive Rate')
-    plt.show()
-    '''
+
     
