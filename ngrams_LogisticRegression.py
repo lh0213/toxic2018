@@ -19,22 +19,20 @@ from sklearn.metrics.ranking import roc_curve, auc
 class_names = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
 all_Comments_Data = pd.read_csv('train.csv').fillna(' ') #
-#test = pd.read_csv('test.csv').fillna(' ')
 
 all_Comments = all_Comments_Data['comment_text']
-#test_text = test['comment_text']
-#all_text = pd.concat([train_text, test_text])
 
+# This is used to create single word/word sequence tf-idf score
+# Right now this is only an initialized function object
+# See documentation: http://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html
 word_vectorizer = TfidfVectorizer(
     sublinear_tf=True,
     strip_accents='unicode',
-    analyzer='word',
+    analyzer='word', #this can be changed between word or char
     token_pattern=r'\w{1,}',
-    stop_words='english',
-    ngram_range=(1, 2),
-    max_features=10000)
-#word_vectorizer.fit(all_Comments)
-#word_features = word_vectorizer.transform(all_Comments)
+    stop_words='english', #this removes all stop words i.e pointless words such as a, the, to etc
+    ngram_range=(1, 2), #this indicates we take single words, and all two words sequences - can be changed too
+    max_features=10000) #Only considers top 10000 features in the final step, can be changed
 
 char_vectorizer = TfidfVectorizer(
     sublinear_tf=True,
@@ -43,8 +41,6 @@ char_vectorizer = TfidfVectorizer(
     stop_words='english',
     ngram_range=(2, 6),
     max_features=50000)
-#char_vectorizer.fit(all_Comments)
-#char_features = char_vectorizer.transform(all_Comments)
 
 
 scores = []
@@ -52,20 +48,28 @@ scores = []
 for class_name in class_names:
 
     classification = all_Comments_Data[class_name]
-    logistic_Classifier = LogisticRegression(C=0.1, solver='sag')
     
-    X_train, X_test, y_train, y_test = train_test_split(all_Comments, classification, test_size = 0.01, random_state = 100)
-    X_train, X_test_dummy, y_train, y_test_dummy = train_test_split(X_train, y_train, test_size = 0.5, random_state = 100)
+    #initialize a logistic regression classifier
+    #this part can either be changed into another model OR we can tune the model's parameters
+    #see the link to check what parameters can be tuned
+    logistic_Classifier = LogisticRegression(C=0.1, solver='sag') #http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
     
-
-
-    X_train = char_vectorizer.fit_transform(X_train)
-    X_test  = char_vectorizer.transform(X_test)
-
+    #we use 1% as testing comments, and 99% as training comments
+    X_train, X_test, y_train, y_test = train_test_split(all_Comments, classification, test_size = 0.1, random_state = 100)
+    
+    #transform training set using fit_transform
+    X_train = word_vectorizer.fit_transform(X_train)
+    #transform the testing comments USING only the training comments' fittings
+    X_test  = word_vectorizer.transform(X_test)
+    
+    #Pass the attributes and classification into a logistic regression model
     logistic_Classifier.fit(X_train, y_train)
     
+    #predict the outcome
     y_pred = logistic_Classifier.predict(X_test)
-
+    
+    #confusion matrix outcome
+    #can someone check what does the matrix mean? I forgot which entry corresponds to TP, TN, FN, FP
     print(confusion_matrix(y_test, y_pred))
     
     '''
