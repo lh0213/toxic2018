@@ -1,5 +1,13 @@
+# Project Report #
+1. Introduction
+2. Methodology (Introduce 3 models, what they are about)
+3. Data
+4. Performance
+5. Other results
+
 # Things to do next: #
 - Discuss the methodology that an expert can use to make our predicting model useful (Example: Our model's goal is to classify different text type. What an expert can do is to create a model to predict user profile based on how many toxic comments, frequency of toxic comments he post online - the expert can use our model as an intermediate step to solely check if a comment is toxic or not.) This is mainly done to address Prof Bryan's concern in his email regarding how can we actually use the results for useful things.
+**(Use our model as part of a bigger prediction models -e.g government has a huge model to detect whether a facebook page should be flagged for inspection; this model uses features such as whether the page posts toxic contents, how many bad comments are posted everyday etc. But to obtain these features, the government can use our localized model to judge whether a comment is toxic in the first place; errors in our prediction will be passed on as noise to the bigger model and the bigger model can handle these noise. Or the owner can use our model to monitor activities on his website)**
 - Divide the test set/train set better. I feel that the training data set contains too many clean comments; this is a major issue because skewed data can cause inaccuracy in predictions. We need to ensure training data set contains more toxic comments. There is a few ways to do this:
   - Decrease the number of clean comments manually in the training data set so that the number of toxic comments and clean comments is more balanced while training
   - Artificially repeat toxic comments so that we can increase the number of toxic comments in training data set. This means we replicate toxic comments in the training data (so maybe each toxic comment we multiply 5 times in training data). Some experts recommend this, some people online says this is a bad approach. We need more discussions on this.
@@ -26,6 +34,10 @@ https://www.kaggle.com/tunguz/logistic-regression-with-words-and-char-n-grams
 resources:
 https://en.wikipedia.org/wiki/Logistic_regression (for Logistic regression)
 https://nlp.stanford.edu/pubs/sidaw12_simple_sentiment.pdf (for naive bayes transformation followed by logistic regression procedure)
+
+
+
+
 
 
 
